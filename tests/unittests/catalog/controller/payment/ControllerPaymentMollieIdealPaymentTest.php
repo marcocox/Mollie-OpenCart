@@ -72,6 +72,15 @@ class ControllerPaymentMollieIdealPaymentTest extends Mollie_OpenCart_TestCase
 		$this->controller->url = $this->url;
 
 		$this->controller->load = $this->getMock("stdClass", array("model", "language"));
+
+		$_SERVER['HTTPS'] = 1;
+		$_SERVER["HTTP_HOST"] = "www.example.org";
+	}
+
+	public function tearDown ()
+	{
+		unset($GLOBALS['log']);
+		parent::tearDown();
 	}
 
 	public function testNothingHappensIfNotPost()
@@ -86,20 +95,25 @@ class ControllerPaymentMollieIdealPaymentTest extends Mollie_OpenCart_TestCase
 
 	public function testFirstPayment()
 	{
-		$this->reportActionTest($failed_order = FALSE, $create_payment_succeeds = TRUE);
+		$this->paymentActionTest($failed_order = FALSE, $create_payment_succeeds = TRUE);
+	}
+
+	public function testFirstPaymentConfigUrlIsNotSet()
+	{
+		$this->paymentActionTest($failed_order = FALSE, $create_payment_succeeds = TRUE, $config_url_set = FALSE);
 	}
 
 	public function testReloadFailedPayment()
 	{
-		$this->reportActionTest($failed_order = TRUE, $create_payment_succeeds = TRUE);
+		$this->paymentActionTest($failed_order = TRUE, $create_payment_succeeds = TRUE);
 	}
 
 	public function testCreatePaymentFails()
 	{
-		$this->reportActionTest($failed_order = FALSE, $create_payment_succeeds = FALSE);
+		$this->paymentActionTest($failed_order = FALSE, $create_payment_succeeds = FALSE);
 	}
 
-	public function reportActionTest($failed_order, $create_payment_succeeds)
+	public function paymentActionTest($failed_order, $create_payment_succeeds, $config_url_set = TRUE)
 	{
 		$this->controller->request->server["REQUEST_METHOD"] = "POST";
 
@@ -143,12 +157,21 @@ class ControllerPaymentMollieIdealPaymentTest extends Mollie_OpenCart_TestCase
 		$this->controller->url->expects($this->exactly(2))
 			->method("link")
 			->with($this->logicalOr("payment/mollie_ideal/callback", "payment/mollie_ideal/report"), "", "SSL")
-			->will($this->returnArgument(0));
+			->will($this->returnCallback(function($url) use ($config_url_set)
+			{
+				if ($config_url_set)
+				{
+					return "https://www.example.org/index.php?route={$url}";
+				}
+				return "index.php?route={$url}";
+			}));
 
 		$this->ideal->expects($this->once())
 			->method("createPayment")
-			->with(self::BANK_ID, 1599, self::CONFIG_DESCRIPTION_FINAL, "payment/mollie_ideal/callback", "payment/mollie_ideal/report")
+			->with(self::BANK_ID, 1599, self::CONFIG_DESCRIPTION_FINAL, "https://www.example.org/index.php?route=payment/mollie_ideal/callback", "https://www.example.org/index.php?route=payment/mollie_ideal/report")
 			->will($this->returnValue($create_payment_succeeds));
+
+		$GLOBALS['log'] = $this->getMock("stub", array("write"));
 
 		if ($create_payment_succeeds)
 		{
@@ -179,7 +202,6 @@ class ControllerPaymentMollieIdealPaymentTest extends Mollie_OpenCart_TestCase
 				->method("getErrorMessage")
 				->will($this->returnValue("The flux capacitors are over capacity."));
 
-			$GLOBALS['log'] = $this->getMock("stub", array("write"));
 			$GLOBALS['log']->expects($this->once())
 				->method("write")
 				->with($this->stringContains("The flux capacitors are over capacity."));

@@ -77,6 +77,26 @@ class ControllerPaymentMollieIdeal extends Controller
 	}
 
 	/**
+	 * URLs returned by OpenCart's url->link() method sometimes lack the hostname and scheme. This method attempts to
+	 * add these automatically, using the HTTP Host header.
+	 *
+	 * @param string $url
+	 * @return string
+	 */
+	protected function fixOpenCartUrl($url)
+	{
+		if (preg_match("!^index\\.php!", $url))
+		{
+			$is_https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+
+			$scheme = $is_https ? 'https://' : 'http://';
+			$url = "{$scheme}{$_SERVER["HTTP_HOST"]}/{$url}" ;
+		}
+
+		return $url;
+	}
+
+	/**
 	 * The payment action creates the iDEAL payment and redirects the customer to the selected bank
 	 */
 	public function payment ()
@@ -107,8 +127,8 @@ class ControllerPaymentMollieIdeal extends Controller
 			$bank_id     = $this->request->post['bank_id'];
 			$amount      = intval(round($order['total'] * 100));
 			$description = str_replace('%', $order['order_id'], html_entity_decode($this->config->get('mollie_ideal_description'), ENT_QUOTES, 'UTF-8'));
-			$return_url  = $this->url->link('payment/mollie_ideal/callback', '', 'SSL');
-			$report_url  = $this->url->link('payment/mollie_ideal/report', '', 'SSL');
+			$return_url  = $this->fixOpenCartUrl($this->url->link('payment/mollie_ideal/callback', '', 'SSL'));
+			$report_url  = $this->fixOpenCartUrl($this->url->link('payment/mollie_ideal/report', '', 'SSL'));
 
 			try
 			{
