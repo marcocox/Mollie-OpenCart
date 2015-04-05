@@ -86,6 +86,14 @@
 						</td>
 					</tr>
 
+					<?php foreach($customer_groups as $customer_group_id => $customer_group_name) { ?>
+					<tr>
+						<td>API key override<br/><span class="help">Customer group "<?php echo $customer_group_name; ?>"</span></td>
+						<td><input type="text" name="mollie_api_key_override_<?php echo $customer_group_id; ?>" value="<?php clean_echo($mollie_api_key_override[$customer_group_id]) ?>" style="width:240px" placeholder="Leave blank to use global API key"/>
+						</td>
+					</tr>
+					<?php } ?>
+
 					<tr>
 						<td><span class="required">*</span> <?php printf('%s:<br /><span class="help">%s</span>', $entry_description, $help_description) ?></td>
 						<td><input style="width:240px" maxlength="29" type="text" name="mollie_ideal_description" value="<?php clean_echo($mollie_ideal_description) ?>" />

@@ -314,6 +314,28 @@ class ControllerPaymentMollieBase extends Controller
 			"mollie_ideal_expired_status_id"    => 14,
 		);
 
+		$this->load->model('sale/customer_group');
+		if ($results = $this->model_sale_customer_group->getCustomerGroups()) {
+			$data['customer_groups'] = array();
+			$data['mollie_api_key_override'] = array();
+			foreach($results as $result) {
+				$data['customer_groups'][$result['customer_group_id']] = $result['name'];
+				if (isset($this->request->post['mollie_api_key_override_'.$result['customer_group_id']]))
+				{
+					$data['mollie_api_key_override'][$result['customer_group_id']] = $this->request->post['mollie_api_key_override_'.$result['customer_group_id']];
+				}
+				elseif ($this->config->get('mollie_api_key_override_'.$result['customer_group_id']))
+				{
+					$data['mollie_api_key_override'][$result['customer_group_id']] = $this->config->get('mollie_api_key_override_'.$result['customer_group_id']);
+				}
+				else
+				{
+					$data['mollie_api_key_override'][$result['customer_group_id']] = '';
+				}
+				
+			}
+		}
+
 		foreach ($settings as $setting_name => $default_value)
 		{
 			// Attempt to read from post

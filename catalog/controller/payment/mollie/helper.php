@@ -34,7 +34,7 @@ class MollieHelper
 	 *
 	 * @return Mollie_API_Client
 	 */
-	public static function getAPIClient ($config)
+	public static function getAPIClient ($config, $customer_group_id='')
 	{
 		if (!self::$api_client)
 		{
@@ -42,7 +42,16 @@ class MollieHelper
 
 			$mollie = new Mollie_API_Client;
 
-			$mollie->setApiKey($config->get('mollie_api_key'));
+			$api_key = $config->get('mollie_api_key');
+			// Check for customer group specific API key override
+			if ($customer_group_id != '')
+			{
+				if ($config->get('mollie_api_key_override_' . $customer_group_id) != '')
+				{
+					$api_key = $config->get('mollie_api_key_override_' . (int)$customer_group_id);
+				}
+			}
+			$mollie->setApiKey($api_key);
 
 			$mollie->addVersionString("OpenCart/" . VERSION);
 			$mollie->addVersionString("MollieOpenCart/" . self::PLUGIN_VERSION);

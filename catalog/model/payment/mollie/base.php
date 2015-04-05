@@ -52,7 +52,7 @@ class ModelPaymentMollieBase extends Model
 	 */
 	protected function getAPIClient ()
 	{
-		return MollieHelper::getAPIClient($this->config);
+		return MollieHelper::getAPIClient($this->config, $this->customer->getCustomerGroupId());
 	}
 
 	/**
