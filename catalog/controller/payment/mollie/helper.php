@@ -62,5 +62,23 @@ class MollieHelper
 		return self::$api_client;
 	}
 
+	public static function getAPIClientFixedKey ($config, $api_key)
+	{
+		if (!self::$api_client)
+		{
+			require_once(realpath(DIR_SYSTEM . "/..") . "/catalog/controller/payment/mollie-api-client/src/Mollie/API/Autoloader.php");
+
+			$mollie = new Mollie_API_Client;
+
+			$mollie->setApiKey($api_key);
+
+			$mollie->addVersionString("OpenCart/" . VERSION);
+			$mollie->addVersionString("MollieOpenCart/" . self::PLUGIN_VERSION);
+
+			self::$api_client = $mollie;
+		}
+
+		return self::$api_client;
+	}
 
 }

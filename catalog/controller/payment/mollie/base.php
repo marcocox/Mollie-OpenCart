@@ -280,7 +280,31 @@ class ControllerPaymentMollieBase extends Controller
 			return;
 		}
 
-		$payment = $this->getAPIClient()->payments->get($payment_id);
+		$payment = null;
+		try {
+			// First try with default API key
+			$payment = $this->getAPIClient()->payments->get($payment_id);
+		} catch (Exception $e) {
+			// Try override API keys
+			$api_key_overrides = $this->config->get("mollie_api_key_overrides");
+			if ($api_key_overrides != '') {
+				$api_keys = explode(',', $api_key_overrides);
+				foreach ($api_keys as $api_key) {
+					try {
+						$api_client = MollieHelper::getAPIClientFixedKey($this->config, $api_key);
+						$payment = $api_client->payments->get($payment_id);
+						break;
+					} catch (Exception $e) {
+						continue;
+					}
+				}
+			}
+		}
+		
+		if ($payment == null) {
+			$this->log->wirte("Mollie webhook call failed because payment status cannot be retrieved. Please check your API keys.");
+			return;
+		}
 
 		// Load essentials
 		$this->load->model("checkout/order");

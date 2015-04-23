@@ -176,6 +176,15 @@ class ControllerPaymentMollieBase extends Controller
 		{
 			$post = $this->request->post;
 
+			// Collect API key overrides in comma separated string
+			$api_key_overrides = array();
+			foreach($post as $k => $v) {
+				if ((strpos($k, 'mollie_api_key_override_') !== false) && ($v != "")) {
+					$api_key_overrides[] = $v;
+				}
+			}
+			$post['mollie_api_key_overrides'] = implode(',', $api_key_overrides);
+
 			foreach (MollieHelper::$MODULE_NAMES as $module_name)
 			{
 				$status = "mollie_" . $module_name . "_status";
